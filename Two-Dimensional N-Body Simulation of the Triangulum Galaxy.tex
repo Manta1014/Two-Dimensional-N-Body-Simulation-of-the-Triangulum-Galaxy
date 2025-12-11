@@ -1,0 +1,303 @@
+%-----------------------------------------------------------------+
+% Two-Dimensional N-Body Simulation of the Triangulum Galaxy.tex  |
+% - CDS-411 final project.                                        |
+%-----------------------------------------------------------------+
+\documentclass[10pt,final,journal,compsoc,letterpaper,twocolumn]{IEEEtran}
+
+% ===== PACKAGES =====
+\usepackage{amsmath,amssymb}
+\usepackage{physics}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{verbatim}
+\usepackage{caption}
+\usepackage[hyperpageref]{backref}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\lstdefinestyle{triangulumstyle}{
+    backgroundcolor=\color{white},
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{gray},
+    stringstyle=\color{purple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    numbers=left,
+    numbersep=10pt,
+    frame=single,
+    rulecolor=\color{black},
+    tabsize=4,
+    xleftmargin=10pt,
+    xrightmargin=10pt,
+    framexleftmargin=10pt
+}
+\lstset{style=triangulumstyle}
+
+\makeatletter
+\def\@maketitle{%
+  \newpage
+  \null
+  \vskip 2em%
+  \begin{center}%
+    {\LARGE \@title \par}%
+    \vskip 1.5em%
+    {\large \lineskip .5em%
+      \begin{tabular}[t]{c}%
+        \@author
+      \end{tabular}\par}%
+  \end{center}%
+  \vskip 1em%
+}
+\makeatother
+
+\makeatletter
+\renewenvironment{abstract}{%
+    \if@twocolumn
+      \section*{\abstractname}%
+    \else
+      \small
+      \begin{center}%
+        {\bfseries \abstractname\vspace{-.5em}\vspace{\z@}}%
+      \end{center}%
+      \quotation
+    \fi}
+    {\if@twocolumn\else\endquotation\fi}
+\makeatother
+
+\begin{document}
+
+% ===== TITLE =====
+\title{Two-Dimensional N-Body Simulation of the Triangulum Galaxy}
+
+\author{%
+  Wonjune Lee\\
+  Department of Computational and Data Sciences\\
+  George Mason University\\
+  \texttt{wlee40@gmu.edu}
+}
+
+\maketitle
+
+% ===== ABSTRACT =====
+\begin{abstract}
+Modeling the rotation curve of the Triangulum Galaxy (M33) using a simplified two-dimensional $N$-body simulation. First, construct a model with only visible stars whose initial velocities follow Kepler's third law and show that the resulting rotation curve declines at large radii. Second, extend the model by adding an extended dark-matter halo. The dark-matter model produces a much flatter outer rotation curve, in qualitative agreement with the observed rotation curve of M33, demonstrating the need for unseen mass in spiral galaxies. Also, carry out simple sensitivity tests on the dark-matter mass and softening length to check the robustness of these conclusions.
+\end{abstract}
+\vspace{1em}
+
+% ================================================================
+\section{Introduction}
+In 1884, Lord Kelvin suggested that the Universe might contain ``dark bodies'' in addition to visible stars. In the early twentieth century, Kapteyn, Lundmark, and Zwicky used stellar velocities and galaxy clusters to argue that far more mass must exist than can be accounted for by luminous matter alone. These ideas are now summarized under the term ``dark matter'' \citep{millerText}\citep{BertoneHooper2018}.
+
+In the 1970s, radio observations of galactic rotation curves showed that many spiral galaxies rotate too fast in their outer regions to be gravitationally bound by visible matter alone. Neutral hydrogen (HI) observations at 21 cm allowed astronomers to trace orbital velocities well beyond the bright stellar disk. Instead of declining, the rotation curves remain nearly flat with radius, strongly suggesting the presence of an extended and massive dark-matter halo.
+
+The Triangulum Galaxy (M33) exhibits this behaviour: its rotation curve stays roughly constant in its outer regions \citep{Corbelli2003}. At the same time, M33 has a relatively low mass, a clear spiral structure, and no large central bulge, making it an ideal test case for a simple disk+halo model.
+
+This project construct a simplified two-dimensional $N$-body simulation of M33 and compare visible-only and visible-plus-dark-matter models. The goal is not to reproduce every detail of M33, but to show that a simple particle model can qualitatively explain why dark matter is required.
+
+\subsection{Historical background}
+The idea that unseen mass affects the motions of astronomical objects has a long history. Kelvin argued that many stellar systems must contain invisible mass to explain their dynamics. Kapteyn later proposed that the Milky Way contains more mass than its visible stars alone. Lundmark extended these arguments to external galaxies, suggesting that the universe as a whole contains far more matter than can be seen directly. Zwicky used the virial theorem to show that galaxies in the Coma Cluster move so fast that the cluster must be bound by additional, unseen mass. 
+
+Later, radio measurements of galactic rotation curves confirmed that many spiral galaxies show flat or even rising velocity profiles at large radii. Together, these results strongly support the existence of dark matter. In this project, reproducing a simple version of this argument in a controlled numerical experiment, focusing on the Triangulum Galaxy.
+
+% ===== Figures: Triangulum Galaxy and observed rotation curve =====
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{Triangulum_Galaxy.jpg}
+\caption{Triangulum Galaxy (M33), optical image \cite{m33image}.}
+\label{fig:triangulum_image}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{Triangulum_Galaxy_rotation_curve.jpg}
+\caption{Observed rotation curve of the Triangulum Galaxy \cite{m33rotcurve}.}
+\label{fig:triangulum_obs_curve}
+\end{figure}
+
+% ================================================================
+\section{Theory}
+\subsection{Gravitational interaction}
+The gravitational force on particle $i$ due to particle $j$ is
+\begin{equation}
+\mathbf{f}_{ij} = G \frac{m_i m_j}{(r_{ij}^2 + \epsilon^2)^{3/2}} (\mathbf{r}_j - \mathbf{r}_i),
+\end{equation}
+where $G$ is the gravitational constant, $\epsilon$ is a softening factor introduced to avoid singular forces at very small separation, and $r_{ij} = \lVert \mathbf{r}_i - \mathbf{r}_j \rVert$ is the distance between the particles. The total force on particle $i$ is the sum over all $j \neq i$.
+
+The parameter $\epsilon$ plays a double role. Physically it mimics the fact that each ``particle'' in the simulation really represents a large group of stars or dark-matter particles with some finite spatial extent. Numerically it prevents extremely large accelerations when two particles pass very close to one another. If $\epsilon$ is too small, the system can become noisy and unstable; if $\epsilon$ is too large, the potential becomes artificially shallow and the disk may be under-bound.
+
+\subsection{Circular orbits and rotation curves}
+For a nearly circular orbit in a spherically symmetric potential, the balance between gravitational and centripetal acceleration gives
+\begin{equation}
+\frac{v^2}{r} = \frac{G M(<r)}{r^2},
+\end{equation}
+so that the tangential velocity satisfies
+\begin{equation}
+v(r) = \sqrt{\frac{GM(<r)}{r}}.
+\label{eq:vcirc}
+\end{equation}
+If most of the mass is concentrated near the centre, then $M(<r)$ is approximately constant and Eq.~\eqref{eq:vcirc} predicts a Keplerian decline $v \propto r^{-1/2}$ at large radii. This is the familiar behaviour of planetary orbits in the Solar System.
+
+However, observed rotation curves in galaxies like M33 remain nearly flat over a wide range of radii \citep{GalaxyRotationCurveWiki}. This implies that $M(<r)$ must continue to grow roughly linearly with $r$, so that $v(r)$ stays approximately constant. A natural way to achieve this behaviour is to assume an extended dark-matter halo whose density decreases slowly with radius.
+
+\subsection{Disk and halo interpretation}
+In simple analytic models, a thin exponential disk produces a rotation curve that rises in the inner region and then gradually declines. A massive, extended halo produces a contribution to $v(r)$ that is small in the central region but dominant at large radii. The observed flat rotation curve can then be interpreted as the quadrature sum of disk and halo contributions.
+
+This simulation does not explicitly impose an analytic density profile such as an NFW or isothermal halo. Instead, approximate the disk by a collection of equal-mass ``star'' particles in a thin plane and the halo by a larger set of low-velocity dark-matter particles distributed over a wider radial range. The resulting rotation curves show how these two components combine dynamically.
+
+% ================================================================
+\section{Data and Parameters}
+\subsection{Representation of the galaxy}
+Representing the visible mass of M33 with $N_\star = 100$ equal-mass star particles forming a disk of radius $R_{\max} = 1$ in dimensionless code units. Each star has mass $M_\star = 1$, corresponding to a total visible mass of $5 \times 10^{10} M_\odot$ when converted back to physical units. This scaling roughly matches the stellar mass of a modest spiral galaxy.
+
+Positions of stars are initialized using a probability distribution proportional to $r$ so that the surface density is approximately constant:
+\begin{itemize}
+  \item draw a uniform random variable $u \in [0,1]$ and set $r = R_{\max} \sqrt{u}$,
+  \item draw an angle $\theta$ uniformly from $[0,2\pi)$,
+  \item set $(x,y) = (r\cos\theta, r\sin\theta)$.
+\end{itemize}
+This procedure places more particles at larger radii than a naive uniform-in-$r$ distribution, which helps to resolve the outer disk.
+
+\subsection{Dark-matter halo model}
+For the dark-matter component, add
+\[
+N_{\mathrm{dm}} = 200, \qquad M_{\mathrm{dm}} = 2.5 M_\star,
+\]
+distributed between radii $0.3$ and $1.5$ using a similar sampling method but with a broader range. Each dark-matter ``particle'' therefore represents a large clump of halo mass. Their initial velocities are small random values consistent with a roughly isotropic halo. The exact distribution is not critical for this project, what matters is that the dark matter extends beyond the visible disk and carries a significant fraction of the total mass.
+
+\subsection{Units and time step}
+All units are dimensionless, with $G = 1$ so that the gravitational interaction has a simple form. One unit of radius corresponds to the outer edge of the visible disk, and the characteristic dynamical time is of order unity. 
+
+Using a time step $\Delta t = 0.001$ and integrate the system for $4000$ iterations, which corresponds to several orbital periods of the inner disk. This is long enough for an approximate steady rotation pattern to emerge, while short enough that numerical errors remain manageable. Snapshots are stored every $200$ steps, providing a time series of the disk evolution that can be visualized using facets.
+
+% ================================================================
+\section{Model and Simulation}
+\subsection{Initialization of visible-only model}
+In the visible-only model, initialize the tangential velocity of each star according to a Kepler-like scaling,
+\[
+v_{\mathrm{tan}}(r) = v_0 r^{-1/2},
+\]
+where $v_0$ is a constant chosen so that the inner disk rotates at a reasonable speed in code units. The direction of the velocity is perpendicular to the radial vector, so that the initial motion is purely circular. This construction intentionally imposes a rotation curve that declines with radius, mimicking the expectation for a centrally concentrated mass distribution.
+
+\subsection{Leapfrog integration}
+Evolving the combined system using the leapfrog (velocity-Verlet) method, which is symplectic and therefore well-suited for long-term integrations of Hamiltonian systems. The update steps for each time step are:
+\begin{enumerate}
+  \item Velocity half-step: advance the velocities by half a time step using the current accelerations.
+  \item Position update: advance the positions by a full time step using the half-step velocities.
+  \item Acceleration update: recompute accelerations from the new positions.
+  \item Velocity full-step: advance the velocities by another half time step.
+\end{enumerate}
+This scheme is second-order accurate in $\Delta t$ and conserves energy much better than a simple forward-Euler method. Because the gravitational interaction scales as $1/r^2$, energy conservation is a useful diagnostic of numerical stability.
+
+\subsection{Visible + dark-matter model}
+For the visible-plus-dark-matter model, keep the same visible disk but add the dark-matter halo particles described in the previous section. The halo is initially close to dynamical equilibrium because the random velocities are small but non-zero. As the system evolves, the stellar disk and dark-matter halo interact gravitationally and settle into a new configuration. Using the same time step, integration method, and snapshot cadence as in the visible-only case so that the two models can be compared directly.
+
+\subsection{Measurement of rotation curves}
+To measure the rotation curve, bin particles by cylindrical radius $r = \sqrt{x^2 + y^2}$. For each radial bin, computing the mean tangential velocity $v_\phi$ of the visible stars:
+\begin{equation}
+v_\phi(r) = \left\langle \frac{-y v_x + x v_y}{\sqrt{x^2 + y^2}} \right\rangle.
+\end{equation}
+Here $(v_x, v_y)$ are the Cartesian components of the velocity. Performing this calculation for the final snapshot of each simulation, when the disk has roughly settled, and then plot $v_\phi(r)$ for the visible-only and visible+dark-matter models on the same axes.
+
+% ================================================================
+\section{Results}
+
+\subsection{Time evolution of the visible-only disk}
+Figure~\ref{fig:visible} shows the visible-only model at several times. Red points represent visible stars. Because all of the mass is concentrated in the disk itself and the initial velocities follow a Kepler-like profile, the inner stars rotate more rapidly than the outer stars. Over time, the disk shears and spiral-like patterns appear as stars at different radii move past each other.
+
+Although the qualitative appearance is that of a rotating disk, the outermost stars are only weakly bound. Some particles migrate outward or inward as they exchange energy and angular momentum through collective interactions. This is a hint that the disk alone may not provide enough gravitational potential to hold the outer stars on nearly circular orbits.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{visible_only_facets.png}
+\caption{Visible-only model: time evolution of the stellar disk. Red points represent stars at different times, shown using facets. Inner stars complete several orbits over the course of the simulation, while outer stars lag behind.}
+\label{fig:visible}
+\end{figure}
+
+\subsection{Time evolution with a dark-matter halo}
+Figure~\ref{fig:dm} shows the visible-plus-dark-matter model. Visible stars are again shown in red, while dark-matter particles are shown in blue. The halo extends beyond the visible disk and provides an additional source of gravitational binding at large radii.
+
+The stellar disk in this model appears more coherent: the outer stars remain more tightly confined, and the overall shape of the disk is preserved over many dynamical times. The halo itself remains roughly spherical in projection, with only mild distortions. This behaviour is consistent with the idea that dark matter dominates the mass budget at large radii and acts as a stabilizing framework for the disk.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{visible_plus_dm_facets.png}
+\caption{Simulation including both visible stars (red) and dark-matter particles (blue). The extended halo provides additional gravitational binding at large radii and helps to maintain a coherent rotating disk.}
+\label{fig:dm}
+\end{figure}
+
+\subsection{Rotation curves}
+Figure~\ref{fig:rotation} shows the average tangential speed of visible stars as a function of radius for both models. The visible-only model produces a rotation curve that declines with radius, roughly following the expected Keplerian $v \propto r^{-1/2}$ behaviour in the outer disk. This is exactly what one would expect if most of the mass is concentrated near the centre.
+
+In contrast, the model including dark matter yields a rotation curve that rises in the inner region and then remains nearly flat over a broad range of radii. The exact shape depends on the details of the halo distribution, but the main feature, a roughly constant velocity beyond the optical disk, is robust. This behaviour is in qualitative agreement with the observed rotation curve of M33 shown in the course textbook.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{rotation_curves.png}
+\caption{Model rotation curves measured from the simulation. Circles: visible-only model, which shows a declining, Keplerian-like profile. Squares: visible plus dark matter, which yields a much flatter rotation curve at large radii.}
+\label{fig:rotation}
+\end{figure}
+
+\subsection{Sensitivity tests}
+To check how robust these conclusions are, performed simple sensitivity tests by varying two key parameters: the total dark-matter mass and the softening length.
+
+\subsubsection{Dark-matter mass}
+Increasing the individual dark-matter particle mass $M_{\mathrm{dm}}$ (while keeping the number of dark-matter particles fixed) makes the halo more massive. In this case, the rotation curve in Figure~\ref{fig:rotation} becomes even flatter and can even rise slightly at the largest radii. Decreasing $M_{\mathrm{dm}}$ produces the opposite effect: the rotation curve bends downward earlier and resembles the visible-only case. 
+
+These experiments show that the flatness of the synthetic rotation curve depends strongly on the halo mass. A sufficiently massive halo is required to keep outer stars on high-velocity orbits, consistent with the physical picture of dark matter dominating at large radii.
+
+\subsubsection{Softening length}
+Also, varied the softening length $\epsilon$. Larger values of $\epsilon$ produce smoother, more diffuse disks and halos, because close encounters are artificially weakened. The rotation curve becomes slightly less noisy but can be biased if $\epsilon$ is too large, effectively spreading out the mass. Conversely, very small $\epsilon$ leads to noisy particle motions and occasional strong encounters, which appear as fluctuations in the measured rotation curve.
+
+Within a reasonable range, however, the qualitative difference between the visible-only and visible+halo models is unchanged. This indicates that the conclusion that dark matter is required for a flat rotation curve does not depend sensitively on the precise value of $\epsilon$.
+
+\subsection{Comparison with observed rotation curve}
+The observed rotation curve of M33 rises steeply in the inner region and then stays approximately constant out to large radii. The visible-only model clearly fails to reproduce this behaviour: its rotation curve peaks and then declines. The visible-plus-dark-matter model, on the other hand, shows a much flatter outer profile.
+
+Although this model is highly simplified and uses only a few hundred particles, the qualitative agreement with the observed curve is encouraging. In particular:
+\begin{itemize}
+  \item both the observed M33 curve and the simulation with dark matter show a broad region where $v(r)$ is roughly constant, and
+  \item the visible-only model systematically underestimates the velocity in the outer disk.
+\end{itemize}
+This comparison supports the standard dark-matter interpretation of flat galactic rotation curves.
+
+% ================================================================
+\section{Discussion}
+Although the model is simplified, it captures essential features of spiral galaxy dynamics. In all experiments, visible matter alone produces a declining, Keplerian-like rotation curve at large radii. Only when adding an extended mass component, the dark-matter halo, obtain a roughly flat rotation curve.
+
+Real galaxies are more complex than the model presented here. They contain bulges, gas disks, spiral arms, and three-dimensional structure. Dark-matter halos follow physically motivated density profiles and extend far beyond the visible disk. In addition, real galaxies experience ongoing gas accretion, star formation, and feedback processes that are not included in my simulation.
+
+Despite these limitations, the simulation demonstrates the core dynamical argument for dark matter in a clean and transparent way. By directly manipulating the halo mass in a numerical model, can see how the rotation curve responds. This reproduces, in a small way, the reasoning that led astronomers from observed curves like that of M33 to the conclusion that dark matter must be present.
+
+The project also illustrates the power of $N$-body methods more generally. A fairly short Python program can evolve a self-gravitating system, produce visually intuitive figures, and allow the user to test hypotheses about the mass distribution.
+
+% ================================================================
+\section{Conclusions}
+This project constructed a two-dimensional $N$-body simulation of the Triangulum Galaxy using simplified gravitational dynamics. The visible-only model fails to match the observed flat rotation curve of M33: its rotation curve declines at large radius because the visible mass is centrally concentrated. When adding an extended dark-matter halo, the synthetic rotation curve becomes much flatter and more closely resembles the observed profile.
+
+Simple sensitivity tests show that these conclusions are robust to reasonable changes in the halo mass and softening length. The main qualitative result is clear: a massive, extended dark-matter halo is required to explain the dynamics of spiral galaxies like M33.
+
+% ================================================================
+\section*{Acknowledgements}
+Thanks to Dr.\ Kent L. Miller for teaching and project advising.
+
+% ================================================================
+\appendices
+
+\onecolumn
+
+\section{Python Code}
+The full simulation script used to generate all figures is provided in Listing~\ref{lst:triangulum}.
+
+\lstinputlisting[
+    caption={Listing A.1: \texttt{triangulum.py} -- N-body simulation of the Triangulum Galaxy},
+    label={lst:triangulum}
+]{triangulum.py}
+
+% ================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{galaxy}
+
+\end{document}
