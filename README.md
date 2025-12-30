@@ -74,12 +74,18 @@ This reproduces the qualitative behavior seen in real observations of M33.
 
 ## 📂 Project Structure
 ```
-├── triangulum.py          # Main N-body simulation script
-├── figures/
-│   ├── visible_only_facets.png
-│   ├── visible_plus_dm_facets.png
-│   └── rotation_curves.png
-├── README.md
+Two-Dimensional-N-Body-Simulation-of-the-Triangulum-Galaxy/
+├── README.md                          # Project overview and documentation
+├── triangulum.py                      # Main 2D N-body simulation script
+├── Two-Dimensional N-Body Simulation of the Triangulum Galaxy.pdf
+│                                     # Final project report (theory, model, results)
+├── galaxy.bib                         # Bibliography file used in the report
+├── Triangulum Galaxy.jpg              # Optical image of the Triangulum Galaxy (M33)
+├── Triangulum Galaxy rotation curve.jpg
+│                                     # Observed rotation curve of M33
+├── rotation_curves.png                # Rotation curves from the simulation
+├── visible_only_facets.png            # Time evolution of the visible-only disk
+└── visible_plus_dm_facets.png         # Time evolution with dark-matter halo
 ```
 
 ---
