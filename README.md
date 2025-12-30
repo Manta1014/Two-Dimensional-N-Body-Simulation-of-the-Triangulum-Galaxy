@@ -3,8 +3,8 @@
 This project implements a **two-dimensional N-body simulation** of the **Triangulum Galaxy (M33)** to demonstrate why an **extended dark-matter halo** is required to explain the observed flat galactic rotation curve.
 
 The simulation compares:
-- a **visible-matter-only disk model**, and  
-- a **visible + dark-matter halo model**,  
+- a **visible-matter-only disk model**
+- a **visible + dark-matter halo model**
 
 and shows that only the latter reproduces a **flat outer rotation curve**, consistent with astronomical observations.
 
