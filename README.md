@@ -25,9 +25,7 @@ This project recreates this classic dark-matter argument using a **simplified bu
 ### Gravitational Interaction
 - Newtonian gravity with a **softening length** to avoid singular forces:
   
-\[
-\mathbf{F}_{ij} = G \frac{m_i m_j}{(r_{ij}^2 + \epsilon^2)^{3/2}} (\mathbf{r}_j - \mathbf{r}_i)
-\]
+![Gravitational force equation](https://latex.codecogs.com/svg.image?\mathbf{F}_{ij}=G\frac{m_im_j}{(r_{ij}^2+\epsilon^2)^{3/2}}(\mathbf{r}_j-\mathbf{r}_i))
 
 - All quantities are expressed in **dimensionless code units** with \( G = 1 \)
 
@@ -51,7 +49,7 @@ This project recreates this classic dark-matter argument using a **simplified bu
 | Snapshot interval | every 200 steps |
 | Disk radius | R = 1.0 (code units) |
 
-- Stellar velocities initialized using a **Kepler-like profile** \( v \propto r^{-1/2} \)
+- Stellar velocities initialized using a **Kepler-like profile** ![Kepler velocity scaling](https://latex.codecogs.com/svg.image?v(r)\propto r^{-1/2})
 - Dark matter initialized with small random velocities to approximate a halo in near equilibrium
 
 ---
