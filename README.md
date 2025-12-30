@@ -49,7 +49,7 @@ This project recreates this classic dark-matter argument using a **simplified bu
 | Snapshot interval | every 200 steps |
 | Disk radius | R = 1.0 (code units) |
 
-- Stellar velocities initialized using a **Kepler-like profile** ![Kepler velocity scaling](https://latex.codecogs.com/svg.image?v(r)\propto r^{-1/2})
+- Stellar velocities initialized using a **Kepler-like profile** ![Kepler velocity scaling](https://latex.codecogs.com/svg.image?v(r)\propto r^{-1/2}) 
 - Dark matter initialized with small random velocities to approximate a halo in near equilibrium
 
 ---
