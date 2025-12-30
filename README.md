@@ -48,8 +48,8 @@ This project recreates this classic dark-matter argument using a **simplified bu
 | Softening length | ε = 0.01 |
 | Snapshot interval | every 200 steps |
 | Disk radius | R = 1.0 (code units) |
-
-- Stellar velocities initialized using a **Kepler-like profile** ![Kepler velocity scaling](https://latex.codecogs.com/svg.image?v(r)\propto r^{-1/2}) 
+	
+- Stellar velocities are initialized using a Kepler-like profile, with v ~ r^(-1/2), consistent with expectations for a centrally concentrated mass distribution.
 - Dark matter initialized with small random velocities to approximate a halo in near equilibrium
 
 ---
